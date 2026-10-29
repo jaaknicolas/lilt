@@ -255,7 +255,8 @@ function renderHome(){
     const doneCount = u.lessons.filter(l=>S.done[l.id]).length;
     const sec = $(`<section class="unit"><div class="unit-head"><div><h2>${u.title}</h2><p>${u.blurb}</p></div><span class="count num">${doneCount}/${u.lessons.length}</span></div><ol class="lessons"></ol></section>`);
     const list = sec.querySelector("ol");
-    u.lessons.forEach((l,i) => {
+    u.lessons.forEach((raw,i) => {
+      const l = ALL.find(x => x.id === raw.id);
       const st = lessonState(l);
       const row = $(`<li class="row ${st}"><span class="n">${String(i+1).padStart(2,"0")}</span>
         <div><h3>${esc(l.title)}</h3><small>${l.items.length} ${u.kind==="r"?(i<3?"words":"sentences"):"phrases"}${l.pace?` · ${l.pace[0]}–${l.pace[1]} wpm`:""}</small></div>
