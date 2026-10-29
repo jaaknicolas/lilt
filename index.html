@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Lilt Speech Practice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a calm single-column practice studio — header, today's goal, units as lesson lists; lessons are one focused card with inline feedback */
+:root{
+  --bg:#f7f8fb; --surface:#ffffff; --line:#e3e6ee; --ink:#1b2130; --muted:#667085;
+  --accent:#2f5bea; --accent-ink:#ffffff; --accent-soft:#e8eeff;
+  --amber:#e8930c; --amber-soft:#fdf1dc;
+  --good:#1f7a55; --good-soft:#e3f3ec; --miss:#c2353a; --miss-soft:#fbe8e8;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12151c; --surface:#1a1e28; --line:#2a303d; --ink:#e9ecf3; --muted:#98a1b3;
+  --accent:#7d9bff; --accent-ink:#0f1424; --accent-soft:#1f2a4a;
+  --amber:#f2ab3c; --amber-soft:#33281a;
+  --good:#5cc597; --good-soft:#17302a; --miss:#f07a7e; --miss-soft:#3a1f22; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151c; --surface:#1a1e28; --line:#2a303d; --ink:#e9ecf3; --muted:#98a1b3;
+  --accent:#7d9bff; --accent-ink:#0f1424; --accent-soft:#1f2a4a;
+  --amber:#f2ab3c; --amber-soft:#33281a;
+  --good:#5cc597; --good-soft:#17302a; --miss:#f07a7e; --miss-soft:#3a1f22; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;line-height:1.15;text-wrap:balance;letter-spacing:-.01em}
+.wrap{max-width:640px;margin:0 auto;padding-block:0 56px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:10px;padding-block:16px;border-bottom:1px solid var(--line)}
+.mark{display:flex;align-items:center;gap:10px;margin-right:auto;font-family:var(--display);font-weight:700;font-size:22px}
+.mark svg{width:28px;height:20px;color:var(--accent)}
+.pill{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-weight:600;font-size:14px}
+button.pill:hover{border-color:var(--muted)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+
+/* goal popover */
+.pop{position:absolute;right:0;top:calc(100% + 8px);width:250px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 12px 32px rgba(15,20,35,.14)}
+.pop h3{font-size:16px}
+.pop p{margin:2px 0 10px;color:var(--muted);font-size:14px}
+.pop .opts{display:grid;gap:6px}
+.opt{display:flex;justify-content:space-between;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-weight:600;font-size:15px}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+
+/* today */
+.today{margin-top:28px;display:grid;gap:10px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.today h1{font-size:clamp(28px,6vw,38px)}
+.goalrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-weight:600;font-size:15px}
+.track{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.track i{display:block;height:100%;background:var(--amber);border-radius:99px;transition:width .5s}
+
+/* units */
+.unit{margin-top:36px}
+.unit-head{display:flex;justify-content:space-between;align-items:end;gap:12px;padding-bottom:10px;border-bottom:2px solid var(--ink)}
+.unit-head h2{font-size:24px}
+.unit-head p{margin:2px 0 0;color:var(--muted);font-size:15px}
+.unit-head .count{font-size:13px;color:var(--muted);white-space:nowrap}
+.lessons{list-style:none;margin:0;padding:0}
+.row{display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.row .n{font-family:var(--mono);font-size:14px;color:var(--muted)}
+.row h3{font-family:var(--body);font-size:17px;font-weight:600;letter-spacing:0}
+.row small{display:block;color:var(--muted);font-size:14px}
+.row .status{font-size:13px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
+.row.done .n{color:var(--good)}
+.row.done .status{color:var(--good)}
+.row.locked h3,.row.locked small{opacity:.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;font-weight:600;font-size:15px;
+  background:var(--accent);color:var(--accent-ink);transition:filter .15s,transform .06s}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:scale(.98)}
+.btn.quiet{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.quiet:hover{border-color:var(--muted);filter:none}
+.btn.small{padding:7px 14px;font-size:14px}
+
+.help{margin-top:40px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:4px 18px}
+.help summary{cursor:pointer;font-weight:600;padding:12px 0}
+.help ol{margin:0 0 14px;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.help code{font-family:var(--mono);font-size:13px;background:var(--bg);padding:2px 6px;border-radius:6px;border:1px solid var(--line);overflow-wrap:anywhere}
+.disclaimer{margin-top:18px;color:var(--muted);font-size:14px}
+
+/* lesson */
+.lesson-top{display:flex;align-items:center;gap:14px;padding-block:16px}
+.close{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;color:var(--muted)}
+.close:hover{background:var(--surface)}
+.close svg{width:20px;height:20px}
+.steps{flex:1;display:flex;gap:4px}
+.steps i{flex:1;height:6px;border-radius:99px;background:var(--line)}
+.steps i.on{background:var(--accent)}
+.steps-label{font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:clamp(20px,5vw,32px);display:grid;gap:22px;margin-top:8px}
+.ctx{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.target{font-family:var(--display);font-weight:500;font-size:clamp(30px,8vw,48px);line-height:1.2;letter-spacing:-.015em;overflow-wrap:anywhere}
+.target mark{background:none;color:var(--accent);font-weight:700}
+.breath{display:inline-block;vertical-align:middle;font-family:var(--mono);font-size:12px;font-weight:500;padding:3px 8px;margin:0 6px;border-radius:6px;background:var(--accent-soft);color:var(--accent);letter-spacing:.04em}
+.hear{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:15px;color:var(--accent)}
+.hear svg{width:18px;height:18px}
+.tip{border-left:3px solid var(--amber);padding:2px 0 2px 14px;font-size:15px}
+.tip b{display:block;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.tip .pace{display:block;margin-top:4px;color:var(--muted);font-size:14px}
+
+.mic-area{display:grid;gap:12px;justify-items:center;padding-top:6px;border-top:1px solid var(--line)}
+.mic{margin-top:16px;width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);transition:transform .1s}
+.mic svg{width:32px;height:32px}
+.mic:active{transform:scale(.95)}
+.mic.live{animation:pulse 1.4s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}100%{box-shadow:0 0 0 22px transparent}}
+.mic-label{font-weight:600}
+.live-text{min-height:24px;color:var(--muted);text-align:center;font-size:15px}
+.alert{width:100%;border-radius:12px;background:var(--amber-soft);padding:12px 14px;font-size:14px;display:grid;gap:8px}
+.alert strong{font-size:15px}
+.alert code{font-family:var(--mono);font-size:12px;opacity:.8}
+.alert .acts{display:flex;gap:8px;flex-wrap:wrap}
+.typing{width:100%;display:grid;gap:10px;margin-top:14px}
+.typing label{font-size:14px;color:var(--muted);font-weight:600}
+.typing .r{display:flex;gap:8px}
+.typing input{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:14px;color:var(--muted)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.switch{font-size:14px;color:var(--muted)}
+.switch button{color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+/* feedback */
+.fb{border-radius:14px;padding:18px;display:grid;gap:12px}
+.fb.ok{background:var(--good-soft)} .fb.bad{background:var(--miss-soft)}
+.fb h3{font-size:20px} .fb.ok h3{color:var(--good)} .fb.bad h3{color:var(--miss)}
+.words{display:flex;flex-wrap:wrap;gap:6px}
+.w{padding:2px 10px;border-radius:8px;font-weight:600;font-size:15px;background:var(--surface)}
+.w.hit{color:var(--good)} .w.miss{color:var(--miss);text-decoration:line-through}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:15px}
+.checks li{display:grid;grid-template-columns:16px 1fr;gap:6px}
+.checks li::before{content:"";width:8px;height:8px;margin-top:8px;border-radius:2px;background:var(--good)}
+.checks li.warn::before{background:var(--miss)}
+.heard{font-size:14px;color:var(--muted)}
+.fb .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* done */
+.done{padding-block:56px 24px;display:grid;gap:22px}
+.done h1{font-size:clamp(32px,7vw,44px)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.stats div{padding:16px;border-left:1px solid var(--line)}
+.stats div:first-child{border-left:0}
+.stats span{display:block;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.stats b{font-family:var(--mono);font-size:24px;font-weight:500}
+@media (max-width:420px){.stats div{padding:12px}.stats b{font-size:19px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="root"></div>
+
+<script>
+(() => {
+const UNITS = [
+  { id:"r", title:"R sounds", blurb:"Clear R at the start, in blends, and after vowels", kind:"r",
+    lessons:[
+      { id:"r1", title:"R at the start", tip:"Pull your tongue back and up without touching the roof of your mouth. Keep your lips relaxed, not rounded like a W.", items:["red","rabbit","rain","road","ring"] },
+      { id:"r2", title:"R blends", tip:"Say the first sound, then slide straight into the R. Don't let a W sneak in between.", items:["tree","brown","frog","crab","bright"] },
+      { id:"r3", title:"Vocalic R", tip:"Hold the vowel, then lift the back of your tongue for the R: car, bird, door.", items:["car","bird","door","teacher","corner"] },
+      { id:"r4", title:"R in sentences", tip:"Go slowly. Give every R the same tongue position, even in quick words.", items:["The red car is fast","Rory runs every morning","Turn right at the river","Bring three ripe pears","Robert reads in the library"] }
+    ]},
+  { id:"f", title:"Fluency", blurb:"Easy starts, steady pace, planned pauses", kind:"fluency",
+    lessons:[
+      { id:"f1", title:"Easy starts", pace:[80,150], tip:"Breathe out a little first, then let the first sound start softly. No pushing.", items:["Open the window","I am ready to go","Every day is new","Ask me anything","Only one more minute"] },
+      { id:"f2", title:"Slow and smooth", pace:[90,140], tip:"Stretch your words slightly and connect them, like one long breath.", items:["My favorite color is blue","We can meet after lunch","The weather is nice today","I like to read before bed","Let me think about that"] },
+      { id:"f3", title:"Phrasing", pace:[100,160], tip:"Pause on purpose at each breath mark. Planned pauses keep the rest smooth.", items:["I went to the store / and bought some bread","When I get home / I start my homework","If it rains / we will stay inside","My brother plays guitar / and my sister sings","After school / I walk the dog"] },
+      { id:"f4", title:"Everyday talk", pace:[100,160], tip:"Real-life phrases. Use your easy start and keep a steady pace.", items:["Can I get a medium coffee please","Hi I have an appointment at three","Could you tell me where the bus stop is","I would like a table for two","Thanks and have a great day"] }
+    ]}
+];
+const ALL = UNITS.flatMap(u => u.lessons.map(l => ({...l, unit:u})));
+
+const KEY = "lilt-demo-v1";
+const todayStr = () => new Date().toISOString().slice(0,10);
+let S = { xp:0, todayXp:0, day:todayStr(), goal:30, done:{}, typing:false };
+try { const s = JSON.parse(localStorage.getItem(KEY)||"null"); if (s) S = {...S, ...s}; } catch(e){}
+if (S.day !== todayStr()) { S.day = todayStr(); S.todayXp = 0; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const isFile = location.protocol === "file:";
+let micProblem = SR ? null : "unsupported";   // why the mic can't be used, if known
+
+const $ = h => { const t = document.createElement("template"); t.innerHTML = h.trim(); return t.content.firstElementChild; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const words = s => String(s).toLowerCase().replace(/\//g," ").replace(/[^a-z' ]/g," ").split(/\s+/).filter(Boolean);
+function lev(a,b){ const m=[...Array(b.length+1).keys()]; for(let i=1;i<=a.length;i++){ let p=m[0]; m[0]=i; for(let j=1;j<=b.length;j++){ const t=m[j]; m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1)); p=t; } } return m[b.length]; }
+const sameWord = (a,b) => a===b || a===b+"s" || b===a+"s";
+
+const ICON = {
+  wave:'<svg viewBox="0 0 28 20" fill="currentColor"><rect x="0" y="7" width="3" height="6" rx="1.5"/><rect x="5" y="3" width="3" height="14" rx="1.5"/><rect x="10" y="0" width="3" height="20" rx="1.5"/><rect x="15" y="4" width="3" height="12" rx="1.5"/><rect x="20" y="7" width="3" height="6" rx="1.5"/><rect x="25" y="8.5" width="3" height="3" rx="1.5"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
+  stop:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>',
+  speaker:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
+  check:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  lock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+};
+function highlight(text, kind){
+  if (kind === "r") return esc(text).replace(/r+/gi, m => `<mark>${m}</mark>`);
+  return esc(text).replace(/\s*\/\s*/g, ' <span class="breath" title="Pause and breathe here">breathe</span> ');
+}
+
+/* ---------- home ---------- */
+const root = document.getElementById("root");
+function lessonState(l){
+  if (S.done[l.id]) return "done";
+  const i = ALL.indexOf(l);
+  if (l.unit.lessons[0].id === l.id || S.done[ALL[i-1]?.id]) return "open";
+  return "locked";
+}
+function renderHome(){
+  stopRec();
+  const pct = Math.min(100, S.todayXp / S.goal * 100), met = S.todayXp >= S.goal;
+  root.innerHTML = "";
+  const app = $(`<div class="wrap">
+    <header class="top">
+      <div class="mark">${ICON.wave}Lilt</div>
+      <div style="position:relative"><button class="pill" id="goalBtn" aria-expanded="false"><span class="dot"></span><span class="num">${S.todayXp}/${S.goal}</span> today</button></div>
+      <div class="pill"><span class="num">${S.xp}</span> XP</div>
+    </header>
+    <section class="today">
+      <div class="eyebrow">Today's practice</div>
+      <h1>${met ? "Daily goal reached. Nice work." : S.todayXp ? "Keep the momentum going." : "Ready for a few minutes of practice?"}</h1>
+      <div class="goalrow"><span>Daily goal</span><span class="num">${S.todayXp} / ${S.goal} XP</span></div>
+      <div class="track"><i style="width:${pct}%"></i></div>
+    </section>
+    <div id="units"></div>
+    <details class="help" ${isFile ? "open" : ""}>
+      <summary>Using your microphone</summary>
+      <ol>
+        <li>Use Chrome or Edge on a computer. Firefox doesn't support speech recognition.</li>
+        <li>The page has to be opened from a web address (<code>https://</code> or <code>http://localhost</code>). Chrome blocks speech recognition on files opened straight from your computer.</li>
+        <li>Quickest local option: in the folder with this file, run <code>python3 -m http.server 8000</code>, then open <code>http://localhost:8000/lilt.html</code>.</li>
+        <li>To share it, upload the file to a GitHub repository, turn on GitHub Pages, and open the link it gives you.</li>
+        <li>When Chrome asks for the microphone, choose Allow. You need to be online, because Chrome sends audio to its speech service.</li>
+      </ol>
+    </details>
+    <p class="disclaimer">Lilt is practice support that goes alongside a speech-language pathologist (SLP), not a replacement for one. Speech recognition checks which words came through, so treat it as a helpful signal, not a clinical assessment.</p>
+  </div>`);
+  root.appendChild(app);
+  const unitsEl = app.querySelector("#units");
+  UNITS.forEach(u => {
+    const doneCount = u.lessons.filter(l=>S.done[l.id]).length;
+    const sec = $(`<section class="unit"><div class="unit-head"><div><h2>${u.title}</h2><p>${u.blurb}</p></div><span class="count num">${doneCount}/${u.lessons.length}</span></div><ol class="lessons"></ol></section>`);
+    const list = sec.querySelector("ol");
+    u.lessons.forEach((l,i) => {
+      const st = lessonState(l);
+      const row = $(`<li class="row ${st}"><span class="n">${String(i+1).padStart(2,"0")}</span>
+        <div><h3>${esc(l.title)}</h3><small>${l.items.length} ${u.kind==="r"?(i<3?"words":"sentences"):"phrases"}${l.pace?` · ${l.pace[0]}–${l.pace[1]} wpm`:""}</small></div>
+        ${st==="open" ? `<button class="btn small">Start</button>` : st==="done" ? `<span class="status">${ICON.check}Done <button class="btn quiet small" style="margin-left:6px">Redo</button></span>` : `<span class="status">${ICON.lock}Locked</span>`}</li>`);
+      row.querySelector("button")?.addEventListener("click", () => startLesson(l));
+      list.appendChild(row);
+    });
+    unitsEl.appendChild(sec);
+  });
+  const gb = app.querySelector("#goalBtn");
+  gb.onclick = e => {
+    e.stopPropagation();
+    const holder = gb.parentElement, ex = holder.querySelector(".pop");
+    if (ex){ ex.remove(); gb.setAttribute("aria-expanded","false"); return; }
+    const pop = $(`<div class="pop" role="dialog" aria-label="Daily goal"><h3>Daily goal</h3><p>How much do you want to practice each day?</p>
+      <div class="opts">${[[20,"Light"],[30,"Steady"],[50,"Intense"]].map(([v,n])=>`<button class="opt" data-v="${v}" aria-pressed="${S.goal===v}"><span>${n}</span><span class="num">${v} XP</span></button>`).join("")}</div></div>`);
+    pop.onclick = ev => { ev.stopPropagation(); const b = ev.target.closest(".opt"); if (b){ S.goal = +b.dataset.v; save(); renderHome(); } };
+    holder.appendChild(pop); gb.setAttribute("aria-expanded","true");
+    setTimeout(() => document.addEventListener("click", function off(){ pop.remove(); gb.setAttribute("aria-expanded","false"); document.removeEventListener("click", off); }), 0);
+  };
+}
+
+/* ---------- lesson ---------- */
+let L = null;
+function startLesson(lesson){
+  L = { lesson, kind:lesson.unit.kind, queue:lesson.items.map(t=>({t,retried:false})), total:lesson.items.length, finished:0, firstTry:0, tried:false };
+  renderItem();
+}
+function renderItem(){
+  stopRec();
+  if (!L.queue.length) return renderDone();
+  const item = L.queue[0]; L.tried = false;
+  const single = words(item.t).length === 1;
+  root.innerHTML = "";
+  const v = $(`<div class="wrap">
+    <div class="lesson-top"><button class="close" id="quit" aria-label="Quit lesson">${ICON.x}</button>
+      <div class="steps" aria-hidden="true">${Array.from({length:L.total},(_,i)=>`<i class="${i<L.finished?"on":""}"></i>`).join("")}</div>
+      <span class="steps-label num">${L.finished}/${L.total}</span></div>
+    <div class="card">
+      <div class="ctx"><span>${esc(L.lesson.unit.title)} · ${esc(L.lesson.title)}</span><span>${item.retried ? "Second try" : single ? "Say this word" : "Say this out loud"}</span></div>
+      <div><div class="target">${highlight(item.t, L.kind)}</div>
+        <button class="hear" id="hear" style="margin-top:12px">${ICON.speaker}Hear it first</button></div>
+      <div class="tip"><b>${L.kind==="r"?"Tongue position":"Fluency tip"}</b>${esc(L.lesson.tip)}${L.lesson.pace?`<span class="pace">Target pace: ${L.lesson.pace[0]}–${L.lesson.pace[1]} words per minute</span>`:""}</div>
+      <div class="mic-area" id="micArea"></div>
+      <div id="fbSlot"></div>
+    </div></div>`);
+  root.appendChild(v);
+  v.querySelector("#quit").onclick = renderHome;
+  v.querySelector("#hear").onclick = () => speak(item.t.replace(/\//g, ","));
+  renderMicArea();
+}
+
+const PROBLEMS = {
+  unsupported: { t:"This browser doesn't support speech recognition.", d:"Open the page in Chrome or Edge on a computer." },
+  file: { t:"Chrome blocks the microphone for files opened from your computer.", d:"Open the page from a web address instead. See “Using your microphone” on the home screen." },
+  blocked: { t:"Microphone access is blocked.", d:"Click the icon at the left of the address bar, set Microphone to Allow, then reload the page." },
+  embedded: { t:"The microphone isn't available in this preview.", d:"Open the downloaded file from a web address in Chrome to use your voice. Typing mode works here." },
+  nomic: { t:"No microphone was found.", d:"Plug one in or check your system sound settings, then try again." },
+  network: { t:"Chrome couldn't reach its speech service.", d:"Check your internet connection. Some browsers like Brave and some school-managed devices block this service." }
+};
+function renderMicArea(){
+  const area = document.getElementById("micArea"); if (!area) return;
+  const item = L.queue[0];
+  area.innerHTML = "";
+  if (micProblem && micProblem !== "dismissed"){
+    const p = PROBLEMS[micProblem] || { t:"The microphone stopped unexpectedly.", d:"Try again, or use typing mode." };
+    area.appendChild($(`<div class="alert" role="alert" style="margin-top:16px"><strong>${p.t}</strong><span>${p.d}</span>
+      <div class="acts">${SR ? `<button class="btn small" id="retry">Try the mic again</button>` : ""}${S.typing ? "" : `<button class="btn quiet small" id="typeMode">Use typing mode</button>`}</div></div>`));
+    area.querySelector("#retry")?.addEventListener("click", () => { micProblem = null; S.typing = false; save(); renderMicArea(); startRec(); });
+    area.querySelector("#typeMode")?.addEventListener("click", () => { S.typing = true; save(); renderMicArea(); });
+  }
+  if (!S.typing && SR){
+    area.appendChild($(`<button class="mic" id="mic" aria-label="Start speaking">${ICON.mic}</button>`));
+    area.appendChild($(`<div class="mic-label" id="micLabel">Tap and say it</div>`));
+    area.appendChild($(`<div class="live-text" id="live" aria-live="polite"></div>`));
+    area.appendChild($(`<p class="switch">No mic right now? <button id="toType">Use typing mode</button></p>`));
+    area.querySelector("#mic").onclick = () => rec ? stopRec() : startRec();
+    area.querySelector("#toType").onclick = () => { S.typing = true; save(); renderMicArea(); };
+  } else {
+    const samples = sampleAttempts(item.t);
+    area.appendChild($(`<form class="typing" id="typeForm">
+      <label for="said">Typing mode: enter what the recognizer heard</label>
+      <div class="r"><input id="said" autocomplete="off" placeholder="Type what was said"><button class="btn" type="submit">Check</button></div>
+      <div class="chips">${samples.map(s=>`<button type="button" class="chip" data-s="${esc(s.text)}">${esc(s.label)}</button>`).join("")}</div></form>`));
+    if (SR) area.appendChild($(`<p class="switch"><button id="toMic">Use the microphone</button></p>`));
+    const f = area.querySelector("#typeForm"), inp = area.querySelector("#said");
+    f.onsubmit = e => { e.preventDefault(); if (inp.value.trim()) evaluate({ best:inp.value, alts:[inp.value], timing:null }); };
+    f.querySelectorAll(".chip").forEach(c => c.onclick = () => { inp.value = c.dataset.s; evaluate({ best:c.dataset.s, alts:[c.dataset.s], timing:null }); });
+    area.querySelector("#toMic")?.addEventListener("click", () => { S.typing = false; micProblem = null; save(); renderMicArea(); });
+  }
+}
+function sampleAttempts(t){
+  const clean = t.replace(/\s*\/\s*/g," "), ws = clean.split(" ");
+  if (L.kind === "r"){
+    const i = ws.findIndex(w=>/r/i.test(w));
+    return [{label:"Clear try", text:clean},{label:"R became W", text:ws.map((w,j)=> j===i ? w.replace(/r/g,"w").replace(/R/g,"W") : w).join(" ")}];
+  }
+  return [{label:"Smooth try", text:clean},{label:"Repeated word", text:[ws[0],ws[0],...ws].join(" ")},{label:"Part-word repeat", text:[ws[0].slice(0,2).toLowerCase(),...ws].join(" ")}];
+}
+function speak(text){
+  try { const u = new SpeechSynthesisUtterance(text); u.rate = .85; u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch(e){}
+}
+
+/* ---------- speech recognition ---------- */
+let rec = null, recData = null, silenceTimer = null;
+function inFrame(){ try { return window.self !== window.top; } catch(e){ return true; } }
+function startRec(){
+  closeFb();
+  let r;
+  try { r = new SR(); } catch(e){ micProblem = "unsupported"; return renderMicArea(); }
+  rec = r;
+  r.lang = "en-US"; r.continuous = true; r.interimResults = true; r.maxAlternatives = 5;
+  const d = recData = { speechStart:null, events:[], finals:[], interim:"", alts:new Set(), error:null };
+  const target = words(L.queue[0].t);
+  r.onspeechstart = () => { d.speechStart = performance.now(); };
+  r.onresult = e => {
+    const now = performance.now(); const finals = []; let interim = "";
+    for (let i=0;i<e.results.length;i++){
+      const res = e.results[i];
+      for (let a=0;a<res.length;a++) d.alts.add(res[a].transcript);
+      if (res.isFinal) finals.push(res[0].transcript); else interim += res[0].transcript;
+    }
+    d.finals = finals; d.interim = interim;
+    const all = (finals.join(" ") + " " + interim).trim(), n = words(all).length;
+    const last = d.events[d.events.length-1];
+    if (!last || n > last.n) d.events.push({ t:now, n });
+    const live = document.getElementById("live"); if (live) live.textContent = all;
+    clearTimeout(silenceTimer);
+    const heardAll = target.every(w => words(all).some(h => sameWord(h,w)));
+    silenceTimer = setTimeout(stopRec, heardAll ? 900 : 2600);
+  };
+  r.onerror = e => {
+    d.error = e.error;
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") micProblem = isFile ? "file" : inFrame() ? "embedded" : "blocked";
+    else if (e.error === "audio-capture") micProblem = "nomic";
+    else if (e.error === "network") micProblem = "network";
+    else if (e.error === "no-speech") { const live = document.getElementById("live"); if (live) live.textContent = "Didn't hear anything. Tap the mic and try again."; }
+    else if (e.error !== "aborted") micProblem = "other";
+  };
+  r.onend = () => {
+    clearTimeout(silenceTimer);
+    if (rec === r) rec = null;
+    setMicUI(false);
+    if (micProblem && d.error) return renderMicArea();
+    if (!d.error && d.events.length) finishRec(d);
+    else if (!d.error && !d.events.length){ const live = document.getElementById("live"); if (live && !live.textContent) live.textContent = "Didn't hear anything. Tap the mic and try again."; }
+  };
+  try { r.start(); setMicUI(true); }
+  catch(e){ rec = null; micProblem = "other"; renderMicArea(); }
+}
+function stopRec(){ clearTimeout(silenceTimer); if (rec){ try { rec.stop(); } catch(e){} } }
+function setMicUI(on){
+  const m = document.getElementById("mic"), lb = document.getElementById("micLabel"); if (!m) return;
+  m.classList.toggle("live", on);
+  m.innerHTML = on ? ICON.stop : ICON.mic;
+  m.setAttribute("aria-label", on ? "Stop" : "Start speaking");
+  if (lb) lb.textContent = on ? "Listening… tap to stop" : "Tap and say it";
+  if (on){ const live = document.getElementById("live"); if (live) live.textContent = ""; }
+}
+function finishRec(d){
+  const best = (d.finals.join(" ") + " " + d.interim).trim();
+  const ev = d.events, t0 = d.speechStart ?? (ev[0].t - 350), t1 = ev[ev.length-1].t;
+  const pauses = [];
+  for (let i=1;i<ev.length;i++){ const gap = (ev[i].t - ev[i-1].t)/1000; if (gap > 1.2) pauses.push({ beforeWord:ev[i-1].n, sec:gap }); }
+  evaluate({ best, alts:[...d.alts], timing:{ sec:Math.max(.5,(t1-t0)/1000), pauses } });
+}
+
+/* ---------- scoring ---------- */
+function evaluate(heard){
+  const item = L.queue[0], target = words(item.t), bestW = words(heard.best);
+  const pool = new Set(heard.alts.flatMap(words).concat(bestW));
+  const hit = w => [...pool].some(h => sameWord(h,w));
+  const res = target.map(w => ({ w, ok:hit(w), hasR:/r/.test(w) }));
+  const acc = res.filter(r=>r.ok).length / res.length;
+  const notes = []; let pass;
+
+  if (L.kind === "r"){
+    res.filter(r=>!r.ok).forEach(r => {
+      const near = bestW.filter(h=>!target.includes(h)).map(h=>({h,d:lev(h,r.w)})).sort((a,b)=>a.d-b.d)[0];
+      if (near && r.hasR && (near.h === r.w.replace(/r/g,"w") || near.h.replace(/w/g,"r") === r.w))
+        notes.push({warn:true, t:`"${r.w}" came through as "${near.h}". That usually means the R was rounded into a W. Relax your lips and pull your tongue back.`});
+      else if (near && near.d <= Math.max(2, Math.ceil(r.w.length/2)))
+        notes.push({warn:true, t:`"${r.w}" was heard as "${near.h}".${r.hasR?" Focus on the R in this word.":""}`});
+      else notes.push({warn:true, t:`Didn't catch "${r.w}". Try it a little slower.`});
+    });
+    const rWords = res.filter(r=>r.hasR);
+    pass = bestW.length > 0 && rWords.every(r=>r.ok) && acc >= .8;
+    if (pass) notes.unshift({t: rWords.length===1 ? `Clear R in "${rWords[0].w}".` : `All ${rWords.length} R words came through clearly.`});
+  } else {
+    const reps = [];
+    for (let i=0;i<bestW.length-1;i++){
+      const a = bestW[i], b = bestW[i+1];
+      if (a === b && !target.some((w,j)=>w===a && target[j+1]===a)) reps.push(`repeated "${a}"`);
+      else if (a.length <= 3 && b.startsWith(a) && b !== a && !target.includes(a)) reps.push(`part-word repeat "${a}… ${b}"`);
+    }
+    if (reps.length){ const r = [...new Set(reps)].join(", "); notes.push({warn:true, t:`${r[0].toUpperCase()+r.slice(1)}. Use an easy start: breathe out, then begin the word gently.`}); }
+    else notes.push({t:"No repetitions."});
+    let paceOk = true;
+    if (heard.timing){
+      const wpm = Math.round(bestW.length / (heard.timing.sec/60)), [lo,hi] = L.lesson.pace;
+      paceOk = wpm >= lo*.85 && wpm <= hi*1.15;
+      notes.push({warn:!paceOk, t: wpm < lo ? `Pace ${wpm} wpm, a bit slow (target ${lo}–${hi}).` : wpm > hi ? `Pace ${wpm} wpm, a bit fast (target ${lo}–${hi}). Stretch your words.` : `Pace ${wpm} wpm, in the target range.`});
+      const planned = []; let c = 0;
+      item.t.split("/").forEach((seg,i,arr) => { c += words(seg).length; if (i < arr.length-1) planned.push(c); });
+      const near = p => planned.some(pl => Math.abs(pl - p.beforeWord) <= 1);
+      const unplanned = heard.timing.pauses.filter(p => !near(p) && p.sec > 1.8);
+      const good = heard.timing.pauses.filter(near);
+      if (planned.length) notes.push({t: good.length ? "You paused at the breath mark. Nice phrasing." : "Try a short pause at the breath mark next time."});
+      if (unplanned.length) notes.push({warn:true, t:`Long pause (${unplanned[0].sec.toFixed(1)}s) before "${target[unplanned[0].beforeWord] ?? "the next word"}". Keep air flowing between words.`});
+      paceOk = paceOk && !unplanned.length;
+    } else notes.push({t:"Pace and pauses are measured when you use the microphone."});
+    if (acc < .8) notes.push({warn:true, t:`Only ${Math.round(acc*100)}% of the words came through.`});
+    pass = bestW.length > 0 && acc >= .8 && !reps.length && paceOk;
+  }
+  if (!L.tried && pass) L.firstTry++;
+  L.tried = true;
+  showFb(pass, res, notes, heard.best);
+}
+function closeFb(){ const s = document.getElementById("fbSlot"); if (s) s.innerHTML = ""; }
+function showFb(pass, res, notes, best){
+  const slot = document.getElementById("fbSlot"); if (!slot) return;
+  const item = L.queue[0];
+  slot.innerHTML = "";
+  const f = $(`<div class="fb ${pass?"ok":"bad"}" role="status">
+    <h3>${pass ? "Good, that came through clearly" : "Not quite yet"}</h3>
+    <div class="words">${res.map(r=>`<span class="w ${r.ok?"hit":"miss"}">${esc(r.w)}</span>`).join("")}</div>
+    <ul class="checks">${notes.map(n=>`<li class="${n.warn?"warn":""}">${esc(n.t)}</li>`).join("")}</ul>
+    <div class="heard">Heard: “${esc(best || "nothing")}”</div>
+    <div class="acts">${pass ? `<button class="btn" id="next">Continue</button>`
+      : `<button class="btn quiet" id="${item.retried ? "skip" : "later"}">${item.retried ? "Move on" : "Try later"}</button><button class="btn" id="again">Try again</button>`}</div></div>`);
+  slot.appendChild(f);
+  const go = fn => { fn(); renderItem(); };
+  f.querySelector("#next")?.addEventListener("click", () => go(() => { L.queue.shift(); L.finished++; }));
+  f.querySelector("#skip")?.addEventListener("click", () => go(() => { L.queue.shift(); L.finished++; }));
+  f.querySelector("#later")?.addEventListener("click", () => go(() => { const it = L.queue.shift(); it.retried = true; L.queue.push(it); }));
+  f.querySelector("#again")?.addEventListener("click", () => { closeFb(); const i = document.getElementById("said"); if (i){ i.value = ""; i.focus(); } else document.getElementById("mic")?.focus(); });
+  (f.querySelector("#next") || f.querySelector("#again")).focus();
+  f.scrollIntoView({ block:"nearest", behavior:"smooth" });
+}
+
+function renderDone(){
+  const lesson = L.lesson, first = !S.done[lesson.id];
+  const gained = (first ? 10 : 5) + L.firstTry, wasBelow = S.todayXp < S.goal;
+  S.xp += gained; S.todayXp += gained; S.done[lesson.id] = true; save();
+  root.innerHTML = "";
+  const v = $(`<div class="wrap"><div class="done">
+    <div class="eyebrow">${esc(lesson.unit.title)} · Lesson complete</div>
+    <h1>${esc(lesson.title)}: done.</h1>
+    <div class="stats">
+      <div><span>XP earned</span><b>+${gained}</b></div>
+      <div><span>First try</span><b>${Math.round(L.firstTry / L.total * 100)}%</b></div>
+      <div><span>Today</span><b>${S.todayXp}/${S.goal}</b></div>
+    </div>
+    ${wasBelow && S.todayXp >= S.goal ? `<p style="margin:0;font-weight:600;color:var(--amber)">You reached today's goal.</p>` : ""}
+    <div><button class="btn" id="cont">Back to lessons</button></div></div></div>`);
+  root.appendChild(v);
+  v.querySelector("#cont").onclick = renderHome;
+  v.querySelector("#cont").focus();
+}
+
+renderHome();
+})();
+</script>
+
+</body></html>
