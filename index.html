@@ -259,7 +259,7 @@ function renderHome(){
       const l = ALL.find(x => x.id === raw.id);
       const st = lessonState(l);
       const row = $(`<li class="row ${st}"><span class="n">${String(i+1).padStart(2,"0")}</span>
-        <div><h3>${esc(l.title)}</h3><small>${l.items.length} ${u.kind==="r"?(i<3?"words":"sentences"):"phrases"}${l.pace?` · ${l.pace[0]}–${l.pace[1]} wpm`:""}</small></div>
+        <div><h3>${esc(l.title)}</h3><small>${l.items.length} ${u.kind==="r"?(i<3?"words":"sentences"):"phrases"}</small></div>
         ${st==="open" ? `<button class="btn small">Start</button>` : st==="done" ? `<span class="status">${ICON.check}Done <button class="btn quiet small" style="margin-left:6px">Redo</button></span>` : `<span class="status">${ICON.lock}Locked</span>`}</li>`);
       row.querySelector("button")?.addEventListener("click", () => startLesson(l));
       list.appendChild(row);
@@ -299,7 +299,7 @@ function renderItem(){
       <div class="ctx"><span>${esc(L.lesson.unit.title)} · ${esc(L.lesson.title)}</span><span>${item.retried ? "Second try" : single ? "Say this word" : "Say this out loud"}</span></div>
       <div><div class="target">${highlight(item.t, L.kind)}</div>
         <button class="hear" id="hear" style="margin-top:12px">${ICON.speaker}Hear it first</button></div>
-      <div class="tip"><b>${L.kind==="r"?"Tongue position":"Fluency tip"}</b>${esc(L.lesson.tip)}${L.lesson.pace?`<span class="pace">Target pace: ${L.lesson.pace[0]}–${L.lesson.pace[1]} words per minute</span>`:""}</div>
+      <div class="tip"><b>${L.kind==="r"?"Tongue position":"Fluency tip"}</b>${esc(L.lesson.tip)}</div>
       <div class="mic-area" id="micArea"></div>
       <div id="fbSlot"></div>
     </div></div>`);
@@ -427,8 +427,9 @@ function finishRec(d){
 /* ---------- scoring ---------- */
 function evaluate(heard){
   const item = L.queue[0], target = words(item.t), bestW = words(heard.best);
-  const pool = new Set(heard.alts.flatMap(words).concat(bestW));
-  const hit = w => [...pool].some(h => sameWord(h,w));
+  // Only the recognizer's top guess counts. Its backup guesses often contain the
+  // target word even when it was said wrong (e.g. "wed" with "red" as a backup).
+  const hit = w => bestW.some(h => sameWord(h,w));
   const res = target.map(w => ({ w, ok:hit(w), hasR:/r/.test(w) }));
   const acc = res.filter(r=>r.ok).length / res.length;
   const notes = []; let pass;
@@ -454,22 +455,19 @@ function evaluate(heard){
     }
     if (reps.length){ const r = [...new Set(reps)].join(", "); notes.push({warn:true, t:`${r[0].toUpperCase()+r.slice(1)}. Use an easy start: breathe out, then begin the word gently.`}); }
     else notes.push({t:"No repetitions."});
-    let paceOk = true;
     if (heard.timing){
       const wpm = Math.round(bestW.length / (heard.timing.sec/60)), [lo,hi] = L.lesson.pace;
-      paceOk = wpm >= lo*.85 && wpm <= hi*1.15;
-      notes.push({warn:!paceOk, t: wpm < lo ? `Pace ${wpm} wpm, a bit slow (target ${lo}–${hi}).` : wpm > hi ? `Pace ${wpm} wpm, a bit fast (target ${lo}–${hi}). Stretch your words.` : `Pace ${wpm} wpm, in the target range.`});
+      notes.push({t:`Your pace: ${wpm} words per minute. Pace doesn't affect your score.`});
       const planned = []; let c = 0;
       item.t.split("/").forEach((seg,i,arr) => { c += words(seg).length; if (i < arr.length-1) planned.push(c); });
       const near = p => planned.some(pl => Math.abs(pl - p.beforeWord) <= 1);
       const unplanned = heard.timing.pauses.filter(p => !near(p) && p.sec > 1.8);
       const good = heard.timing.pauses.filter(near);
       if (planned.length) notes.push({t: good.length ? "You paused at the breath mark. Nice phrasing." : "Try a short pause at the breath mark next time."});
-      if (unplanned.length) notes.push({warn:true, t:`Long pause (${unplanned[0].sec.toFixed(1)}s) before "${target[unplanned[0].beforeWord] ?? "the next word"}". Keep air flowing between words.`});
-      paceOk = paceOk && !unplanned.length;
+      if (unplanned.length) notes.push({t:`Long pause (${unplanned[0].sec.toFixed(1)}s) before "${target[unplanned[0].beforeWord] ?? "the next word"}". Keep air flowing between words.`});
     } else notes.push({t:"Pace and pauses are measured when you use the microphone."});
     if (acc < .8) notes.push({warn:true, t:`Only ${Math.round(acc*100)}% of the words came through.`});
-    pass = bestW.length > 0 && acc >= .8 && !reps.length && paceOk;
+    pass = bestW.length > 0 && acc >= .8 && !reps.length;
   }
   if (!L.tried && pass) L.firstTry++;
   L.tried = true;
@@ -481,7 +479,7 @@ function showFb(pass, res, notes, best){
   const item = L.queue[0];
   slot.innerHTML = "";
   const f = $(`<div class="fb ${pass?"ok":"bad"}" role="status">
-    <h3>${pass ? "Good, that came through clearly" : "Not quite yet"}</h3>
+    <h3>${pass ? (L.kind==="r" ? "Good, that came through clearly" : "Smooth, no repetitions") : (L.kind==="r" ? "Not quite yet" : "Repetition noticed. Try it once more")}</h3>
     <div class="words">${res.map(r=>`<span class="w ${r.ok?"hit":"miss"}">${esc(r.w)}</span>`).join("")}</div>
     <ul class="checks">${notes.map(n=>`<li class="${n.warn?"warn":""}">${esc(n.t)}</li>`).join("")}</ul>
     <div class="heard">Heard: “${esc(best || "nothing")}”</div>
